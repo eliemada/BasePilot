@@ -1,0 +1,21 @@
+README.md
+  s_1709a7cf48dd4c::t_1c6e9d3f0466f6 10-14
+docs/linux.md
+  s_1709a7cf48dd4c::t_cd46f11d70aa26 12-16,97-101,165-192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1092bf943b7cb11171772144d9d3527a4faf6056",
+  "prompts": {},
+  "sessions": {
+    "s_1709a7cf48dd4c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1cdff-16a9-7c01-8103-18d9c5d92b4d",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Elie BRUNO <contact@eliebruno.com>"
+    }
+  }
+}
