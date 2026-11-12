@@ -1,5 +1,12 @@
 # BasePilot
 
+**Linux/ADB fork:** this fork adds native Linux support for controlling an Android
+emulator or device. It uses ADB screenshots and scrcpy touch injection, including
+continuous drags and two-finger zoom. The original Windows backend is retained.
+See [Linux installation and validation](docs/linux.md). Android transport tests
+are separate from Clash compatibility: the game must successfully run in your
+chosen Android environment before farming can be validated.
+
 **Autopilot for your Clash of Clans base.** BasePilot farms, upgrades, and knows when
 to do nothing — it runs unattended until your village genuinely has nothing left to
 start, then waits for a builder to free up and gets back to work.

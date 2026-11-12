@@ -1,6 +1,7 @@
 '''Resolve Tesseract OCR for development and for PyInstaller one-file builds.'''
 from __future__ import annotations
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -56,7 +57,8 @@ Resolution order:
             cmd = Path(os.environ['TESSERACT_CMD'])
             pytesseract.pytesseract.tesseract_cmd = str(cmd)
             td = _tessdata_dir(cmd.parent)
-            os.environ['TESSDATA_PREFIX'] = str(td.resolve()) + os.sep
+            if td.is_dir() and not os.environ.get('TESSDATA_PREFIX'):
+                os.environ['TESSDATA_PREFIX'] = str(td.resolve()) + os.sep
             logger.debug('Tesseract from TESSERACT_CMD: %s, tessdata=%s', cmd, td)
             return None
         if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -70,6 +72,13 @@ Resolution order:
                 return None
             logger.error('Frozen build: tesseract.exe not found under %s. OCR will not work; the Tesseract binary was not bundled/extracted correctly.', base)
             return None
+        native = shutil.which('tesseract')
+        if sys.platform != 'win32' and native:
+            # Linux packages keep tessdata under /usr/share/tesseract-ocr,
+            # not next to /usr/bin/tesseract. Let Tesseract find its data.
+            pytesseract.pytesseract.tesseract_cmd = native
+            logger.debug('Tesseract from PATH: %s', native)
+            return None
         win = Path('C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
         if win.is_file():
             pytesseract.pytesseract.tesseract_cmd = str(win)
@@ -77,7 +86,7 @@ Resolution order:
             os.environ['TESSDATA_PREFIX'] = str(td.resolve()) + os.sep
             logger.debug('Tesseract dev install: %s, tessdata=%s', win, td)
             return None
-        logger.error('Tesseract not configured (install with winget install UB-Mannheim.TesseractOCR or set TESSERACT_CMD). OCR will not work until Tesseract is available.')
+        logger.error('Tesseract not configured. Install tesseract-ocr on Linux, UB-Mannheim.TesseractOCR on Windows, or set TESSERACT_CMD.')
         return None
     except ImportError:
         return None

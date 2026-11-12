@@ -4,6 +4,7 @@ from typing import List, Optional
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QComboBox, QDialog, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QMainWindow, QSpinBox, QVBoxLayout, QWidget
 from app.config import resolve_aspect_key
+from app.services.backend import backend_name
 from app.services.display import DisplayService
 from app.services.window import DescendantInfo, WindowCandidate, WindowService
 from app.ui.qt.theme import SPACING, TOKENS
@@ -61,6 +62,7 @@ class SettingsPage(QWidget):
     def __init__(self, parent = None):
         super().__init__(parent)
         self._candidates = []
+        self._adb = backend_name() == 'adb'
         self._display = DisplayService()
         outer = QVBoxLayout(self)
         outer.setContentsMargins(SPACING['lg'], SPACING['lg'], SPACING['lg'], SPACING['lg'])
@@ -143,8 +145,8 @@ class SettingsPage(QWidget):
     
     def _build_window_card(self):
         card = Card()
-        card.card_layout.addWidget(SectionTitle('Game window'))
-        hint = QLabel("If the bot can't find Clash of Clans, pick the Google Play Games window below and press Test. Windows with a game surface are listed first.")
+        card.card_layout.addWidget(SectionTitle('Android device' if self._adb else 'Game window'))
+        hint = QLabel('Open Clash of Clans on your Android device, then select the device below and press Test.' if self._adb else "If the bot can't find Clash of Clans, pick the Google Play Games window below and press Test. Windows with a game surface are listed first.")
         hint.setWordWrap(True)
         hint.setStyleSheet(f'''color: {TOKENS['text_muted']};''')
         card.card_layout.addWidget(hint)
@@ -167,7 +169,7 @@ class SettingsPage(QWidget):
         self._btn_info = neutral_button('Info', parent = card)
         self._btn_info.clicked.connect(self._on_window_info)
         row.addWidget(self._btn_info)
-        self._btn_use = primary_button('Use this window', parent = card)
+        self._btn_use = primary_button('Use this device' if self._adb else 'Use this window', parent = card)
         self._btn_use.clicked.connect(self._on_use_window)
         row.addWidget(self._btn_use)
         row.addStretch()
@@ -179,12 +181,17 @@ class SettingsPage(QWidget):
         disp_hint.setWordWrap(True)
         disp_hint.setStyleSheet(f'''color: {TOKENS['text_muted']};''')
         card.card_layout.addWidget(disp_hint)
+        if self._adb:
+            disp_hint.setText('Set the Android display to landscape 16:9 or 16:10 (for example 1920×1080). BasePilot captures the Android display directly, so the Linux desktop resolution does not affect detection.')
         disp_row = QHBoxLayout()
         self._btn_disp_169 = neutral_button('Switch display to 16:9', parent = card)
         self._btn_disp_169.clicked.connect(self._on_switch_display_169)
         disp_row.addWidget(self._btn_disp_169)
         self._btn_disp_restore = neutral_button('Restore my display', parent = card)
         self._btn_disp_restore.clicked.connect(self._on_restore_display)
+        if self._adb:
+            self._btn_disp_169.hide()
+            self._btn_disp_restore.hide()
         disp_row.addWidget(self._btn_disp_restore)
         disp_row.addStretch()
         card.card_layout.addLayout(disp_row)
@@ -251,22 +258,17 @@ class SettingsPage(QWidget):
             if selected_row >= 0:
                 self._window_list.setCurrentRow(selected_row)
             if not self._candidates:
-                self._window_status.setText('No visible windows found. Open the game, then Refresh.')
+                self._window_status.setText('No Android devices found. Start an emulator or connect an authorized device, then Refresh.' if self._adb else 'No visible windows found. Open the game, then Refresh.')
             elif saved.is_set():
                 self._window_status.setText(f'''Pinned window: {saved.title or '(saved)'}''')
             else:
                 self._window_status.setText('Using auto-detect.')
             self._update_window_buttons()
             return None
-        except Exception:
-            exc = None
+        except Exception as exc:
             logger.warning(f'''Could not enumerate windows: {exc}''')
+            self._window_status.setText(str(exc))
             self._candidates = []
-            exc = None
-            del exc
-
-        exc = None
-        del exc
 
     
     def _muted_brush(self):
@@ -289,12 +291,12 @@ class SettingsPage(QWidget):
         if cand is None:
             return None
         if not cand.is_game:
-            self._window_status.setText('No Google Play Games surface (CROSVM) under this window — pick the game window.')
+            self._window_status.setText('Device is offline or unauthorized. Unlock it and authorize debugging.' if self._adb else 'No Google Play Games surface (CROSVM) under this window — pick the game window.')
             return None
         ws = WindowService()
         surface_size = ws.window_pixel_size(cand.child_hwnd)
         if surface_size is None:
-            self._window_status.setText('Could not read the window size. Is the game minimized?')
+            self._window_status.setText(getattr(ws, 'last_error', '') or 'Could not read the window size. Is the game minimized?')
             return None
         sub_size = None
         
@@ -312,7 +314,7 @@ class SettingsPage(QWidget):
             if resolve_aspect_key(sw, sh) is None:
                 lines.append('Surface aspect unsupported — try resizing the game window.')
             else:
-                lines.append('Surface OK to use.')
+                lines.append('Capture size OK. Open Clash of Clans before starting.' if self._adb else 'Surface OK to use.')
             self._window_status.setText('\n'.join(lines))
             return None
         except Exception:

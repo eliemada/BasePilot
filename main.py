@@ -18,7 +18,6 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS') and not os.environ
     if os.path.isfile(_bundled_tess):
         os.environ['TESSERACT_CMD'] = _bundled_tess
 
-from app.ui.qt.app import run_gui
 from app.utils.logger import setup_logger
 from app.utils.tesseract_env import configure_tesseract
 logger = setup_logger('Main')
@@ -26,7 +25,23 @@ logger = setup_logger('Main')
 
 def main():
     try:
+        import argparse
+        parser = argparse.ArgumentParser(description='BasePilot for Windows or Android over ADB')
+        parser.add_argument('--backend', choices=('auto', 'windows', 'adb'), default=None)
+        parser.add_argument('--device', help='Android serial from adb devices')
+        parser.add_argument('--diagnose', action='store_true', help='Read-only Android/OCR check; no bot actions')
+        parser.add_argument('--screenshot', help='Save the diagnostic Android screenshot to this path')
+        args, remaining = parser.parse_known_args()
+        if args.backend:
+            os.environ['BASEPILOT_BACKEND'] = args.backend
+        if args.device:
+            os.environ['BASEPILOT_ADB_SERIAL'] = args.device
+        sys.argv = [sys.argv[0]] + remaining
         configure_tesseract()
+        if args.diagnose:
+            from app.services.diagnostics import diagnose_android
+            sys.exit(diagnose_android(args.screenshot))
+        from app.ui.qt.app import run_gui
         try:
             from app.services.display import DisplayService
             DisplayService().restore_if_pending()

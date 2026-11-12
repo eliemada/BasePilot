@@ -80,7 +80,8 @@ class Bot:
         self._state_callback = state_callback
         self._earthquake_method = earthquake_method
         if not self.window.find_window():
-            raise RuntimeError('Clash of Clans window not found. Please ensure the game is open.')
+            raise RuntimeError(getattr(self.window, 'last_error', '') or
+                               'Clash of Clans window not found. Please ensure the game is open.')
         self._reset_loot_session()
         self._emit_loot_update()
         self.running = True
@@ -127,6 +128,10 @@ class Bot:
         finally:
             self.running = False
             self._earthquake_method = EARTHQUAKE_METHOD_CURVE
+            try:
+                self.input.close()
+            except Exception:
+                logger.warning('Input cleanup failed', exc_info=True)
             logger.info('Bot stopped.')
 
     
@@ -236,7 +241,7 @@ wall upgrades for the first pre-Attack snapshot that would otherwise count as an
     def _nudge_view_to_reveal_attack(self):
         '''Click ``empty`` (``data.json``) and scroll at anchor to nudge village until Attack is findable.'''
         self.input.click(pause = 0.15, *self.config.get_point('empty'))
-        self.input.scroll(*self._scroll_point(), 5)
+        self.input.zoom(*self._scroll_point(), 5)
 
     
     def _find_home_village_builder(self, frame, region):
@@ -827,7 +832,7 @@ deselect, which would eat the upcoming Attack click.'''
         self._update_config_size(frame)
         empty_pt = self.config.get_point('empty')
         self.input.click(pause = 0.2, *empty_pt)
-        self.input.scroll(*self._scroll_point(), 20)
+        self.input.zoom(*self._scroll_point(), 20)
         delay = random.uniform(0.1, 0.3)
         if self.stop_event.wait(delay):
             return None
@@ -884,7 +889,7 @@ deselect, which would eat the upcoming Attack click.'''
             self._maybe_upgrade_walls(upgrade_walls)
             self._maybe_auto_upgrade()
             self._maybe_idle(deadline)
-            self.input.scroll(*self._scroll_point(), 5)
+            self.input.zoom(*self._scroll_point(), 5)
             if self.stop_event.wait(random.uniform(0.15, 0.25)):
                 return None
             if star_bonus and self._is_star_bonus_claimed():
@@ -904,7 +909,7 @@ deselect, which would eat the upcoming Attack click.'''
             self._update_config_size(frame)
         empty_pt = self.config.get_point('empty')
         self.input.click(pause = 0.2, *empty_pt)
-        self.input.scroll(*self._scroll_point(), 20)
+        self.input.zoom(*self._scroll_point(), 20)
         if self.stop_event.wait(random.uniform(0.1, 0.3)):
             return None
         if star_bonus and self._is_bb_star_bonus_finished():
@@ -915,7 +920,7 @@ deselect, which would eat the upcoming Attack click.'''
             return None
         while time.time() - start_time < duration_seconds:
             self._check_stop()
-            self.input.scroll(*self._scroll_point(), 20)
+            self.input.zoom(*self._scroll_point(), 20)
             if self.stop_event.wait(random.uniform(0.1, 0.25)):
                 return None
             (ax, ay) = self._wait_for_image('attack.png', timeout = 10)
@@ -945,7 +950,7 @@ deselect, which would eat the upcoming Attack click.'''
             self.input.move(cx, cy)
             if self.stop_event.wait(0.05):
                 return None
-            self.input.scroll(cx, cy, 4)
+            self.input.zoom(cx, cy, 4)
             if self.stop_event.wait(0.15):
                 return None
             frame = self.window.screenshot()
@@ -1261,7 +1266,7 @@ deselect, which would eat the upcoming Attack click.'''
         self.input.move(cx, cy)
         if self.stop_event.wait(0.05):
             return None
-        self.input.scroll(cx, cy, 3)
+        self.input.zoom(cx, cy, 3)
         frame = self.window.screenshot()
         if frame is None:
             return None
@@ -1530,7 +1535,7 @@ Each iteration dismisses ``okay.png`` / ``exit.png`` if present, then village / 
         self._update_config_size(frame)
         empty_pt = self.config.get_point('empty')
         self.input.click(pause = 0.2, *empty_pt)
-        self.input.scroll(*self._scroll_point(), 20)
+        self.input.zoom(*self._scroll_point(), 20)
         delay = random.uniform(0.1, 0.3)
         if self.stop_event.wait(delay):
             return (None, None)

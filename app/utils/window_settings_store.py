@@ -41,7 +41,7 @@ def load_window_selection():
             return WindowSelection()
         return WindowSelection(title = str(raw.get('title', '') or ''), top_class = str(raw.get('top_class', '') or ''), child_class = str(raw.get('child_class', '') or ''))
     except (json.JSONDecodeError, OSError):
-        return None
+        return WindowSelection()
 
 
 
