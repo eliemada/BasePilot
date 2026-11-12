@@ -13,17 +13,19 @@ class LinuxStartupTests(unittest.TestCase):
         self.assertIsNotNone(MainWindow)
         self.assertFalse(DisplayService().restore_if_pending())
 
-    @patch.dict(os.environ, {}, clear=True)
+    @patch.dict(os.environ)
     @patch('app.utils.tesseract_env.sys.platform', 'linux')
     @patch('app.utils.tesseract_env.shutil.which', return_value='/usr/bin/tesseract')
     def test_linux_tesseract_uses_its_packaged_data(self, which):
+        os.environ.pop('TESSERACT_CMD', None)
+        os.environ.pop('TESSDATA_PREFIX', None)
         import pytesseract
         from app.utils.tesseract_env import configure_tesseract
         configure_tesseract()
         self.assertEqual(pytesseract.pytesseract.tesseract_cmd, '/usr/bin/tesseract')
         self.assertNotIn('TESSDATA_PREFIX', os.environ)
 
-    @patch.dict(os.environ, {'TESSERACT_CMD': '/usr/bin/tesseract', 'TESSDATA_PREFIX': '/custom/data'}, clear=True)
+    @patch.dict(os.environ, {'TESSERACT_CMD': '/usr/bin/tesseract', 'TESSDATA_PREFIX': '/custom/data'})
     def test_explicit_tesseract_data_is_preserved(self):
         from app.utils.tesseract_env import configure_tesseract
         configure_tesseract()
