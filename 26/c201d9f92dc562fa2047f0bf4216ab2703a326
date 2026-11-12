@@ -1,0 +1,21 @@
+.github/workflows/tests.yml
+  s_1709a7cf48dd4c::t_951b7f9ca4aa98 24-28
+tests/test_linux_startup.py
+  s_1709a7cf48dd4c::t_951b7f9ca4aa98 16,20-21,28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "26c201d9f92dc562fa2047f0bf4216ab2703a326",
+  "prompts": {},
+  "sessions": {
+    "s_1709a7cf48dd4c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1cdff-16a9-7c01-8103-18d9c5d92b4d",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Elie BRUNO <contact@eliebruno.com>"
+    }
+  }
+}
