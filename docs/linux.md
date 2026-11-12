@@ -9,6 +9,11 @@ The first deployment uses Ubuntu 24.04 in Unraid, with 4 vCPUs, 6 GiB RAM and a
 This boots without GPU passthrough. Game performance and compatibility must be
 tested separately; a successful Android boot is not proof that Clash works.
 
+**Current result, 2026-11-12:** the Play Store build of Clash 18.647.5 installs
+but exits during startup in this VM. The same unmodified build also exits in
+Waydroid/Android 13. The instructions below reproduce the Linux app and Android
+transport setup; farming has not been demonstrated in either tested runtime.
+
 ## Install BasePilot
 
 Use Python 3.11 or later. On Ubuntu 24.04:
@@ -89,6 +94,11 @@ NAT guests can be administered through SSH via the Unraid host, and the desktop
 through the VM's VNC console. The VM and Android emulator do not need a Wi-Fi
 adapter. Software graphics avoids taking a GPU away from other host workloads.
 
+When defining the Unraid VM through libvirt XML, the VNC graphics device also
+needs `websocket='-1'` alongside `autoport='yes'`. Otherwise Unraid's noVNC link
+can point to `/wsproxy/0/` and fail even though the VM and VNC server are running.
+After correcting this, refresh the VMs page and open a new VNC tab.
+
 ## Validate before starting
 
 ```bash
@@ -152,10 +162,34 @@ OCR configuration, plus the upstream upgrade/event regression tests.
 
 Live Unraid validation has confirmed Android boot, native Qt startup (after
 installing the XCB libraries above), screenshots, OCR availability, and two
-simultaneous injected fingers visible in Android's pointer overlay. Full Clash
-gameplay is not yet validated. Software rendering is CPU-intensive and screenshot
-latency can be seconds, so battle timing may need tuning after the game runs.
-No Windows live-game regression test has been performed by this fork.
+simultaneous injected fingers visible in Android's pointer overlay. The 40-test
+suite passed on the Ubuntu guest and fresh Linux and Windows CI runners.
+
+The game compatibility test used Clash **18.647.5**, version code **180647006**,
+with its native **x86_64** libraries:
+
+| Runtime on the Ubuntu VM | Installation | ADB screenshot sample | Game launch |
+| --- | --- | --- | --- |
+| Official Android 15 / API 35 Google Play Emulator, KVM + software graphics | Google Play, signed in | 720×1280, about 2.4 s | Exits during startup |
+| Waydroid, LineageOS 20 / Android 13 GAPPS, SwiftShader under nested Weston | Same five unchanged APK components from the Play Store installation | 1280×720, about 0.31 s | Exits during startup |
+
+Both launch attempts report `smxuhbhxh.ae: 02` while initializing the app factory
+through `Runtime.nativeLoad` / `System.loadLibrary`. In the official emulator,
+the native library load is logged as successful before the app raises the
+exception. The precise reason for that internal exception is unknown. It is
+not evidence that every Linux runtime is incompatible, and changing BasePilot's
+capture code does not resolve this startup failure.
+
+No village, template matching, troop deployment, or upgrades have been validated
+in these runtimes. No Windows live-game regression test has been performed.
+The next gameplay test needs a runtime or device where this Clash build actually
+opens. Keep `--diagnose` separate from a farming run; its transport success does
+not establish game compatibility.
+
+An additional official-emulator console screenshot benchmark took about 0.22 s,
+but returned the physical 1080×1920 display while ADB used the overridden
+720×1280 coordinates. That alternative is not enabled in this fork; rotation
+and touch-coordinate mapping would need validation before using it.
 
 References: [Android Emulator acceleration](https://developer.android.com/studio/run/emulator-acceleration),
 [Google's SDK tools](https://developer.android.com/studio),

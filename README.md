@@ -7,6 +7,11 @@ See [Linux installation and validation](docs/linux.md). Android transport tests
 are separate from Clash compatibility: the game must successfully run in your
 chosen Android environment before farming can be validated.
 
+**Runtime status (2026-11-12):** Clash 18.647.5 installs but exits during startup
+in both tested runtimes on the Unraid VM: the official Android 15 Emulator and
+Waydroid/Android 13 with software graphics. Linux capture, input and UI checks
+pass; gameplay remains blocked. See the [recorded results](docs/linux.md#checks-and-current-limits).
+
 **Autopilot for your Clash of Clans base.** BasePilot farms, upgrades, and knows when
 to do nothing — it runs unattended until your village genuinely has nothing left to
 start, then waits for a builder to free up and gets back to work.
